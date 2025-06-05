@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"git.eo13-dev.com/enordaz/gokedex/internal/pokeapi"
 )
 
 func getCommands() map[string]cliCommand {
@@ -22,15 +24,17 @@ func getCommands() map[string]cliCommand {
 		"map": {
 			name:        "map",
 			description: "Displays the names of the next 20 locations",
+			callback:    commandMap,
 		},
 		"mapb": {
 			name:        "mapb",
 			description: "Displays the names of the previous 20 locations",
+			callback:    commandMapb,
 		},
 	}
 }
 
-func startRepl() {
+func startRepl(cfg *config) {
 	reader := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print(prompt)
@@ -45,13 +49,13 @@ func startRepl() {
 		command, exists := getCommands()[inputCommand]
 
 		if exists {
-			err := command.callback()
+			err := command.callback(cfg)
 			if err != nil {
-				fmt.Printf("%v error: %v", command.name, err.Error())
+				fmt.Printf("%v error: %v\n", command.name, err.Error())
 			}
 		} else {
 
-			fmt.Println("Unknown command")
+			fmt.Println("unknown command")
 			continue
 		}
 
@@ -61,7 +65,13 @@ func startRepl() {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(*config) error
+}
+
+type config struct {
+	pokeClient       pokeapi.Client
+	nextLocationsURL *string
+	prevLocationsURL *string
 }
 
 func cleanInput(text string) []string {
