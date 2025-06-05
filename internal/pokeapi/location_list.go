@@ -1,7 +1,9 @@
 package pokeapi
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
@@ -11,20 +13,30 @@ func (c *Client) ListLocations(pageUrl *string) (RespShallowLocations, error) {
 		url = *pageUrl
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return RespShallowLocations{}, err
-	}
+	data, ok := c.cache.Get(url)
+	if !ok {
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return RespShallowLocations{}, err
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return RespShallowLocations{}, err
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return RespShallowLocations{}, err
+		}
+		defer resp.Body.Close()
+
+		data, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return RespShallowLocations{}, err
+		}
+		c.cache.Add(url, data)
 	}
-	defer resp.Body.Close()
 
 	var locationsResp RespShallowLocations
-	decoder := json.NewDecoder(resp.Body)
-	if err = decoder.Decode(&locationsResp); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	if err := decoder.Decode(&locationsResp); err != nil {
 		return RespShallowLocations{}, err
 	}
 
