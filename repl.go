@@ -31,6 +31,26 @@ func getCommands() map[string]cliCommand {
 			description: "Displays the names of the previous 20 locations",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore <area_name>",
+			description: "Displays the pokemon found in an area",
+			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch <pokemon_name>",
+			description: "Attempt to catch a pokemon",
+			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect <pokemon_name>",
+			description: "Displays info of a catched pokemon",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays your caught pokemon",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -46,10 +66,15 @@ func startRepl(cfg *config) {
 		}
 
 		inputCommand := words[0]
+		commandArg := ""
+		if len(words) > 1 {
+			commandArg = words[1]
+		}
+
 		command, exists := getCommands()[inputCommand]
 
 		if exists {
-			err := command.callback(cfg)
+			err := command.callback(cfg, commandArg)
 			if err != nil {
 				fmt.Printf("%v error: %v\n", command.name, err.Error())
 			}
@@ -65,11 +90,12 @@ func startRepl(cfg *config) {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*config, string) error
 }
 
 type config struct {
 	pokeClient       pokeapi.Client
+	pokeDex          *map[string]pokeapi.Pokemon
 	nextLocationsURL *string
 	prevLocationsURL *string
 }
