@@ -1,3 +1,3 @@
-module git.eo13-dev.com/enordaz/gokedex
+module gitlab.com/zonne13/gokedex
 
 go 1.24.2
